@@ -16,7 +16,7 @@ void cg::renderer::rasterization_renderer::init()
 
   // Create rasterizer
   rasterizer =
-    std::make_shared<rasterizer < vertex, unsigned_color> > ();
+    std::make_shared<cg::renderer::rasterizer<cg::vertex, cg::unsigned_color>>();
   rasterizer->set_render_target(render_target);
 }
 

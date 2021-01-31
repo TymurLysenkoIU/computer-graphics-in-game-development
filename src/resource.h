@@ -27,6 +27,12 @@ public:
   size_t get_number_of_elements() const;
   size_t get_stride() const;
 
+  typename std::vector<T>::iterator begin() noexcept;
+  typename std::vector<T>::iterator end() noexcept;
+
+  typename std::vector<T>::const_iterator begin() const noexcept;
+  typename std::vector<T>::const_iterator end() const noexcept;
+
 private:
   std::vector<T> data;
   size_t item_size = sizeof(T);
@@ -37,7 +43,6 @@ template<typename T>
 resource<T>::resource(size_t size)
 {
   data.resize(size);
-  // item_size = sizeof(T);
   stride = 0;
 }
 
@@ -45,8 +50,6 @@ template<typename T>
 resource<T>::resource(size_t x_size, size_t y_size)
 {
   data.resize(x_size * y_size);
-  stride = x_size;
-  // item_size = sizeof(T);
   stride = x_size;
 }
 
@@ -92,13 +95,38 @@ size_t resource<T>::get_stride() const
   return stride;
 }
 
+template<typename T>
+typename std::vector<T>::iterator resource<T>::begin() noexcept
+{
+  return data.begin();
+}
+
+template<typename T>
+typename std::vector<T>::iterator resource<T>::end() noexcept
+{
+  return data.end();
+}
+
+template<typename T>
+typename std::vector<T>::const_iterator resource<T>::begin() const noexcept
+{
+  return data.begin();
+}
+
+template<typename T>
+typename std::vector<T>::const_iterator resource<T>::end() const noexcept
+{
+  return data.end();
+}
+
 struct color
 {
   static color from_float3(const float3& in)
   {
     THROW_ERROR("Not implemented yet");
     return color();
-  };
+  }
+
   float r;
   float g;
   float b;
@@ -110,13 +138,14 @@ struct unsigned_color
   {
     THROW_ERROR("Not implemented yet");
     return unsigned_color();
-  };
+  }
 
   float3 to_float3()
   {
     THROW_ERROR("Not implemented yet");
     return float3();
-  };
+  }
+
   unsigned char r;
   unsigned char g;
   unsigned char b;

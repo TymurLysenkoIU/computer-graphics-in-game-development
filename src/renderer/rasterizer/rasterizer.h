@@ -18,21 +18,23 @@ class rasterizer
 public:
   rasterizer()
   {
-  };
+  }
 
   ~rasterizer()
   {
-  };
+  }
+
   void set_render_target(
     std::shared_ptr<resource<RT>> in_render_target,
-    std::shared_ptr<resource<float>> in_depth_buffer = nullptr);
+    std::shared_ptr<resource<float>> in_depth_buffer = nullptr
+  );
   void clear_render_target(const RT& in_clear_value, float in_depth = FLT_MAX);
 
   void set_vertex_buffer(std::shared_ptr<resource<VB>> in_vertex_buffer);
 
   void set_viewport(size_t in_width, size_t in_height);
 
-  void draw(size_t num_vertexes, size_t vertex_offest);
+  void draw(size_t num_vertexes, size_t vertex_offset);
 
   std::function<std::pair<float4, VB>(float4 vertex, VB vertex_data)>
   vertex_shader;
@@ -53,21 +55,27 @@ protected:
 template<typename VB, typename RT>
 void rasterizer<VB, RT>::set_render_target(
   std::shared_ptr<resource<RT>> in_render_target,
-  std::shared_ptr<resource<float>> in_depth_buffer)
+  std::shared_ptr<resource<float>> in_depth_buffer
+)
 {
   if (in_render_target)
     render_target = in_render_target;
+
+  if (in_depth_buffer)
+    depth_buffer = in_depth_buffer;
 }
 
 template<typename VB, typename RT>
 void rasterizer<VB, RT>::clear_render_target(
-  const RT& in_clear_value, const float in_depth)
+  const RT& in_clear_value,
+  const float in_depth
+)
 {
   if (render_target)
   {
-    for (size_t i = 0; i < render_target->get_number_of_elements(); ++i)
+    for (auto& i : *render_target)
     {
-      render_target->item(i) = in_clear_value;
+      i = in_clear_value;
     }
   }
 }
@@ -86,7 +94,7 @@ void rasterizer<VB, RT>::set_viewport(size_t in_width, size_t in_height)
 }
 
 template<typename VB, typename RT>
-void rasterizer<VB, RT>::draw(size_t num_vertexes, size_t vertex_offest)
+void rasterizer<VB, RT>::draw(size_t num_vertexes, size_t vertex_offset)
 {
   THROW_ERROR("Not implemented yet");
 }

@@ -18,9 +18,7 @@ protected:
   std::shared_ptr<resource<unsigned_color>> render_target;
 
   std::shared_ptr<raytracer<vertex, unsigned_color>> raytracer;
-  std::shared_ptr<raytracer < vertex, unsigned_color>
-  >
-  shadow_raytracer;
+  std::shared_ptr<cg::renderer::raytracer<vertex, unsigned_color>> shadow_raytracer;
 
   std::vector<light> lights;
 };

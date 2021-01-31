@@ -64,8 +64,7 @@ SCENARIO("Rasterizer can clear render target", "[rasterizer]")
   GIVEN("Dummy rasterizer with unsigned char render target")
   {
     cg::renderer::rasterizer<float, unsigned char> rasterizer;
-    auto render_target = std::make_shared<cg::resource<unsigned char>>(
-      1920, 1080);
+    auto render_target = std::make_shared<cg::resource<unsigned char>>(1920, 1080);
     rasterizer.set_render_target(render_target);
 
     WHEN("We call clear render target")
@@ -75,23 +74,23 @@ SCENARIO("Rasterizer can clear render target", "[rasterizer]")
 
       THEN("The render target was cleared")
       {
-        for (size_t i = 0; i < render_target->get_number_of_elements(); i++)
+        for (const auto& i : *render_target)
         {
-          REQUIRE(render_target->item(i) == clear_color);
+          REQUIRE(i == clear_color);
         }
       }
     }
   }
 }
 
-// TEST_CASE("FullHD clear benchmark", "[benchmark]")
-// {
-// 	cg::renderer::rasterizer<float, unsigned char> rasterizer;
-// 	auto render_target = std::make_shared<cg::resource<unsigned char>>(1920,
-// 1080); rasterizer.set_render_target(render_target);
-//
-// 	BENCHMARK("FullHD clear benchmark")
-// 	{
-// 		return rasterizer.clear_render_target(0);
-// 	};
-// }
+TEST_CASE("FullHD clear benchmark", "[benchmark]")
+{
+	cg::renderer::rasterizer<float, unsigned char> rasterizer;
+	auto render_target = std::make_shared<cg::resource<unsigned char>>(1920,
+1080); rasterizer.set_render_target(render_target);
+
+	BENCHMARK("FullHD clear benchmark")
+	{
+		return rasterizer.clear_render_target(0);
+	};
+}
