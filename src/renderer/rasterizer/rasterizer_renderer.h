@@ -8,16 +8,16 @@ namespace cg::renderer
 class rasterization_renderer : public renderer
 {
 public:
-	virtual void init();
-	virtual void destroy();
+  void init() override;
+  void destroy() override;
 
-	virtual void update();
-	virtual void render();
+  void update() override;
+  void render() override;
 
 protected:
-	std::shared_ptr<cg::resource<cg::unsigned_color>> render_target;
-	std::shared_ptr<cg::resource<float>> depth_buffer;
+  std::shared_ptr<resource<unsigned_color>> render_target;
+  std::shared_ptr<resource<float>> depth_buffer;
 
-	std::shared_ptr<cg::renderer::rasterizer<cg::vertex, cg::unsigned_color>> rasterizer;
+  std::shared_ptr<rasterizer<vertex, unsigned_color>> rasterizer;
 };
 } // namespace cg::renderer
