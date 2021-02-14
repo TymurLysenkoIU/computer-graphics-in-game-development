@@ -9,10 +9,9 @@ void cg::renderer::rasterization_renderer::init()
   model = std::make_shared<world::model>();
   model->load_obj(settings->model_path);
 
-  // Create render taret
+  // Create render target
   render_target =
-    std::make_shared<resource<unsigned_color>>(
-      settings->width, settings->height);
+    std::make_shared<resource<unsigned_color>>(settings->width, settings->height);
 
   // Create rasterizer
   rasterizer =

@@ -60,8 +60,7 @@ std::shared_ptr<settings> settings::parse_settings(int argc, char** argv)
   settings->height = result["height"].as<unsigned>();
   settings->width = result["width"].as<unsigned>();
   settings->model_path = result["model_path"].as<std::filesystem::path>();
-  settings->camera_position = result["camera_position"].as<std::vector<float>
-  >();
+  settings->camera_position = result["camera_position"].as<std::vector<float>>();
   settings->camera_theta = result["camera_theta"].as<float>();
   settings->camera_phi = result["camera_phi"].as<float>();
   settings->camera_angle_of_view = result["camera_angle_of_view"].as<float>();

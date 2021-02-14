@@ -33,8 +33,7 @@ unsigned renderer::get_width()
 }
 
 
-std::shared_ptr<renderer> cg::renderer::make_renderer(
-  std::shared_ptr<settings> settings)
+std::shared_ptr<renderer> cg::renderer::make_renderer(std::shared_ptr<settings> settings)
 {
 #ifdef RASTERIZATION
   auto renderer = std::make_shared<rasterization_renderer>();

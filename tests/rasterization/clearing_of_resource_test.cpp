@@ -49,7 +49,7 @@ SCENARIO("2D resource could be created and accessed by items", "[resource]")
         REQUIRE(res.item(0, 1) == 64);
       }
 
-      THEN("We can access the data using linear nad matrix notations")
+      THEN("We can access the data using linear and matrix notations")
       {
         REQUIRE(res.item(0) == res.item(0, 0));
         REQUIRE(res.item(1) == res.item(1, 0));
