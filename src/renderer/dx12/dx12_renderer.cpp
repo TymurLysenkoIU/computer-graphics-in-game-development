@@ -75,6 +75,7 @@ void cg::renderer::dx12_renderer::render()
 void cg::renderer::dx12_renderer::load_pipeline()
 {
   UINT dxgi_factory_flags = 0;
+
 #ifdef _DEBUG
   ComPtr<ID3D12Debug> debug_controller;
   if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller))))
@@ -186,7 +187,17 @@ void cg::renderer::dx12_renderer::load_pipeline()
     );
 
     rtv_handle.Offset(1, rtv_descriptor_size);
+
+    // TODO: add name
   }
+
+  D3D12_DESCRIPTOR_HEAP_DESC cbv_heap_desc = {};
+  cbv_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+  cbv_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+  THROW_IF_FAILED(device->CreateDescriptorHeap(
+    &cbv_heap_desc,
+    IID_PPV_ARGS(&cbv_heap)
+  ));
 }
 
 void cg::renderer::dx12_renderer::load_assets()
@@ -368,6 +379,18 @@ void cg::renderer::dx12_renderer::load_assets()
     sizeof(world_view_projection)
   );
   // Don't unmap constant buffer resource
+
+  // Create CBV descriptor
+  D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_descriptor = {};
+  cbv_descriptor.BufferLocation =
+    constant_buffer->GetGPUVirtualAddress();
+  cbv_descriptor.SizeInBytes =
+    (sizeof(world_view_projection) + 255) & ~255;
+
+  device->CreateConstantBufferView(
+    &cbv_descriptor,
+    cbv_heap->GetCPUDescriptorHandleForHeapStart()
+  );
 }
 
 void cg::renderer::dx12_renderer::populate_command_list()
