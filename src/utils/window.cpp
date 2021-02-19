@@ -119,7 +119,8 @@ int window::run(renderer::renderer* renderer, HINSTANCE hinstance, int ncmdshow)
     window_class.lpszClassName, L"DX12 renderer", WS_OVERLAPPEDWINDOW,
     CW_USEDEFAULT, CW_USEDEFAULT, window_rect.right - window_rect.left,
     window_rect.bottom - window_rect.top, nullptr, nullptr, hinstance,
-    renderer);
+    renderer
+  );
 
   // Initialize the sample. OnInit is defined in each child-implementation of DXSample.
   renderer->init();
@@ -140,11 +141,11 @@ int window::run(renderer::renderer* renderer, HINSTANCE hinstance, int ncmdshow)
   return static_cast<int>(msg.wParam);
 }
 
-LRESULT window::window_proc(
-  HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
+LRESULT window::window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
   renderer::renderer* renderer = reinterpret_cast<renderer::renderer*>(
-    GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    GetWindowLongPtr(hwnd, GWLP_USERDATA)
+  );
 
   switch (message)
   {
@@ -153,7 +154,8 @@ LRESULT window::window_proc(
     LPCREATESTRUCT pCreateStruct = reinterpret_cast<LPCREATESTRUCT>(lparam);
     SetWindowLongPtr(
       hwnd, GWLP_USERDATA,
-      reinterpret_cast<LONG_PTR>(pCreateStruct->lpCreateParams));
+      reinterpret_cast<LONG_PTR>(pCreateStruct->lpCreateParams)
+    );
   }
     return 0;
 
@@ -195,10 +197,11 @@ LRESULT window::window_proc(
       short y_pos = GET_Y_LPARAM(lparam);
 
       renderer->move_yaw(
-        (2.f * static_cast<float>(x_pos) / renderer->get_width() - 1.f) * 30.f);
+        (2.f * static_cast<float>(x_pos) / renderer->get_width() - 1.f) * 30.f
+      );
       renderer->move_pitch(
-        (-2.f * static_cast<float>(y_pos) / renderer->get_height() + 1.f) *
-        30.f);
+        (-2.f * static_cast<float>(y_pos) / renderer->get_height() + 1.f) * 30.f
+      );
     }
   }
     return 0;
