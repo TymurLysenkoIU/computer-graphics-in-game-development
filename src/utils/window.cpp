@@ -191,18 +191,18 @@ LRESULT window::window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpara
     return 0;
 
   case WM_MOUSEMOVE: {
-    if (renderer)
-    {
-      short x_pos = GET_X_LPARAM(lparam);
-      short y_pos = GET_Y_LPARAM(lparam);
-
-      renderer->move_yaw(
-        (2.f * static_cast<float>(x_pos) / renderer->get_width() - 1.f) * 30.f
-      );
-      renderer->move_pitch(
-        (-2.f * static_cast<float>(y_pos) / renderer->get_height() + 1.f) * 30.f
-      );
-    }
+    // if (renderer)
+    // {
+    //   short x_pos = GET_X_LPARAM(lparam);
+    //   short y_pos = GET_Y_LPARAM(lparam);
+    //
+    //   renderer->move_yaw(
+    //     (2.f * static_cast<float>(x_pos) / renderer->get_width() - 1.f) * 30.f
+    //   );
+    //   renderer->move_pitch(
+    //     (-2.f * static_cast<float>(y_pos) / renderer->get_height() + 1.f) * 30.f
+    //   );
+    // }
   }
     return 0;
 
