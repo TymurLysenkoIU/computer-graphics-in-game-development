@@ -56,30 +56,30 @@ std::shared_ptr<renderer> cg::renderer::make_renderer(std::shared_ptr<settings> 
 
 void renderer::move_forward(float delta)
 {
-  THROW_ERROR("Not implemented yet")
+    camera->set_position(camera->get_position() + camera->get_direction() * delta);
 }
 
 void renderer::move_backward(float delta)
 {
-  THROW_ERROR("Not implemented yet")
+    camera->set_position(camera->get_position() - camera->get_direction() * delta);
 }
 
 void renderer::move_left(float delta)
 {
-  THROW_ERROR("Not implemented yet")
+    camera->set_position(camera->get_position() - camera->get_right() * delta);
 }
 
 void renderer::move_right(float delta)
 {
-  THROW_ERROR("Not implemented yet")
+    camera->set_position(camera->get_position() + camera->get_right() * delta);
 }
 
 void renderer::move_yaw(float delta)
 {
-  THROW_ERROR("Not implemented yet")
+  camera->set_theta(delta);
 }
 
 void renderer::move_pitch(float delta)
 {
-  THROW_ERROR("Not implemented yet")
+  camera->set_phi(delta);
 }

@@ -87,14 +87,20 @@ const float4x4 camera::get_view_matrix() const
 #ifdef DX12
 const DirectX::XMMATRIX camera::get_dxm_view_matrix() const
 {
-  THROW_ERROR("Not implemented yet");
-  return DirectX::XMMatrixIdentity();
+  // DirectX requires its own vector types; so here we go:
+  DirectX::FXMVECTOR eye_position{ position.x, position.y, position.z };
+  float3 direction = get_direction();
+  DirectX::FXMVECTOR eye_direction{ direction.x, direction.y, direction.z };
+  DirectX::FXMVECTOR up_direction{ 0.f, 1.f, 0.f };
+
+  return DirectX::XMMatrixLookToRH(eye_position, eye_direction, up_direction);
 }
 
 const DirectX::XMMATRIX camera::get_dxm_projection_matrix() const
 {
-  THROW_ERROR("Not implemented yet");
-  return DirectX::XMMatrixIdentity();
+  return DirectX::XMMatrixPerspectiveFovRH(
+    angle_of_view, aspect_ratio, z_near, z_far
+  );
 }
 #endif
 
