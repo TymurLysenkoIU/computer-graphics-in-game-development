@@ -5,137 +5,135 @@
 #include "utils/error_handler.h"
 
 #include <linalg.h>
+#include <stdio.h>
+
 
 using namespace linalg::aliases;
 using namespace cg::world;
 
-model::model()
-{
-}
+cg::world::model::model() {}
 
-model::~model()
-{
-}
+cg::world::model::~model() {}
 
-void model::load_obj(const std::filesystem::path& model_path)
+void cg::world::model::load_obj(const std::filesystem::path& model_path)
 {
   tinyobj::ObjReaderConfig reader_config;
-  reader_config.mtl_search_path = model_path.parent_path().string();
+  reader_config.mtl_search_path =
+    model_path.parent_path().string(); // Path to material files
   reader_config.triangulate = true;
-
   tinyobj::ObjReader reader;
-
-  if (!reader.ParseFromFile(model_path.string(), reader_config))
-  {
-    if (!reader.Error().empty())
-    {
-      THROW_ERROR(reader.Error());
-    }
-    exit(1);
-  }
+  reader.ParseFromFile(model_path.string(), reader_config);
 
   auto& attrib = reader.GetAttrib();
   auto& shapes = reader.GetShapes();
   auto& materials = reader.GetMaterials();
 
-  size_t vertex_buffer_size = 0;
-  std::vector<size_t> per_shapes_num_vertices(shapes.size());
+  std::vector<size_t> per_shapes_ids(shapes.size());
+  for (size_t s = 0; s < shapes.size(); s++)
+    per_shapes_ids[s] = shapes[s].mesh.indices.size();
+
+  // Counters used to populate our buffers
+  size_t vertex_buffer_id = 0;
+  size_t per_shape_id = 0;
+
+  size_t vert_count = 0;
   for (size_t s = 0; s < shapes.size(); s++)
   {
-    // Loop over shapes
-
-    per_shapes_num_vertices[s] = 0;
-    for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); ++f)
+    for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++)
     {
-      // Loop over faces(polygon)
       int fv = shapes[s].mesh.num_face_vertices[f];
-      vertex_buffer_size += fv;
-      per_shapes_num_vertices[s] += fv;
+      vert_count += fv;
     }
   }
 
-  vertex_buffer = std::make_shared<resource<vertex>>(vertex_buffer_size);
-
+  // The final data structures for our loaded model
+  vertex_buffer = std::make_shared<cg::resource<cg::vertex>>(vert_count);
   per_shape_buffer.resize(shapes.size());
-  for (size_t s = 0; s < shapes.size(); ++s)
-  {
-    per_shape_buffer[s] =
-      std::make_shared<resource<vertex>>(per_shapes_num_vertices[s]);
-  }
 
-  vertex_buffer_size = 0;
+  // Initialize per shape buffers
   for (size_t s = 0; s < shapes.size(); s++)
   {
-    // Loop over shapes
+    per_shape_buffer[s] =
+      std::make_shared<cg::resource<cg::vertex>>(per_shapes_ids[s]);
+  }
 
-    size_t face_offset = 0;
-    size_t per_shapes_id = 0;
+  // Loop over shapes
+  for (size_t s = 0; s < shapes.size(); s++)
+  {
+    // Reset per-shape ID
+    per_shape_id = 0;
+    // Loop over faces in a shape
+    size_t index_offset = 0;
+
     for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++)
     {
-      // Loop over faces(polygon)
+      int fv = shapes[s].mesh.num_face_vertices[f];
 
-      int num_face_vertices = shapes[s].mesh.num_face_vertices[f];
+      // Computed normal of a face (if none is specified)
       float3 normal;
-      if (shapes[s].mesh.indices[face_offset].normal_index < 0)
+      // Compute normal for the face if there are no normals specified
+      // for the vertices.
+      if (shapes[s].mesh.indices[index_offset].normal_index < 0)
       {
-        // If there is no normal for the vertex, calculate it
+        auto a_id = shapes[s].mesh.indices[index_offset + 0];
+        auto b_id = shapes[s].mesh.indices[index_offset + 1];
+        auto c_id = shapes[s].mesh.indices[index_offset + 2];
 
-        // Take indexes of the first (and only) 3 points on the face
-        auto a_id = shapes[s].mesh.indices[face_offset + 0];
-        auto b_id = shapes[s].mesh.indices[face_offset + 1];
-        auto c_id = shapes[s].mesh.indices[face_offset + 2];
+        float3 a{ attrib.vertices[3 * a_id.vertex_index + 0],
+                  attrib.vertices[3 * a_id.vertex_index + 1],
+                  attrib.vertices[3 * a_id.vertex_index + 2] };
+        float3 b{ attrib.vertices[3 * b_id.vertex_index + 0],
+                  attrib.vertices[3 * b_id.vertex_index + 1],
+                  attrib.vertices[3 * b_id.vertex_index + 2] };
+        float3 c{ attrib.vertices[3 * c_id.vertex_index + 0],
+                  attrib.vertices[3 * c_id.vertex_index + 1],
+                  attrib.vertices[3 * c_id.vertex_index + 2] };
 
-        // Get the coordinates of each vertex, having the vertex indices
-        float3 a {
-          // Multiply by 3, since vertex_index is the index of the group of 3
-          // coordinates (vertex) and vertices array is a list of coordinates for each vertex
-          attrib.vertices[3 * a_id.vertex_index + 0],
-          attrib.vertices[3 * a_id.vertex_index + 1],
-          attrib.vertices[3 * a_id.vertex_index + 2],
-        };
-        float3 b {
-          attrib.vertices[3 * b_id.vertex_index + 0],
-          attrib.vertices[3 * b_id.vertex_index + 1],
-          attrib.vertices[3 * b_id.vertex_index + 2],
-        };
-        float3 c {
-          attrib.vertices[3 * c_id.vertex_index + 0],
-          attrib.vertices[3 * c_id.vertex_index + 1],
-          attrib.vertices[3 * c_id.vertex_index + 2],
-        };
-
-        // calculate the normal for the 3 points that constitute the plane
         normal = normalize(cross(b - a, c - a));
       }
 
-      for (size_t v = 0; v < num_face_vertices; v++)
+      // Loop over vertices in the face.
+      for (size_t v = 0; v < fv; v++)
       {
-        // Loop over vertices in the face.
-
         // access to vertex
-        tinyobj::index_t cur_vertex_idx = shapes[s].mesh.indices[face_offset + v];
+        tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+        tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
+        tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
+        tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
 
-        vertex vertex = {};
-
-        vertex.x = attrib.vertices[3 * cur_vertex_idx.vertex_index + 0];
-        vertex.y = attrib.vertices[3 * cur_vertex_idx.vertex_index + 1];
-        vertex.z = attrib.vertices[3 * cur_vertex_idx.vertex_index + 2];
-
-        if (cur_vertex_idx.normal_index > -1)
+        tinyobj::real_t nx;
+        tinyobj::real_t ny;
+        tinyobj::real_t nz;
+        if (idx.normal_index > -1)
         {
-          // If normals are present in the file
-          vertex.nx = attrib.normals[3 * cur_vertex_idx.normal_index + 0];
-          vertex.ny = attrib.normals[3 * cur_vertex_idx.normal_index + 1];
-          vertex.nz = attrib.normals[3 * cur_vertex_idx.normal_index + 2];
+          // If normal is supplied in the file, read it
+          nx = attrib.normals[3 * idx.normal_index + 0];
+          ny = attrib.normals[3 * idx.normal_index + 1];
+          nz = attrib.normals[3 * idx.normal_index + 2];
         }
         else
         {
-          // If there are no normals for the vertex, use calculated for the face
-          vertex.nx = normal.x;
-          vertex.ny = normal.y;
-          vertex.nz = normal.z;
+          // If not, use predicted values
+          nx = normal[0];
+          ny = normal[1];
+          nz = normal[2];
         }
 
+        // Read UVs
+        // tinyobj::real_t tx = attrib.texcoords[2 * idx.texcoord_index + 0];
+        // tinyobj::real_t ty = attrib.texcoords[2 * idx.texcoord_index + 1];
+
+        cg::vertex vertex = {};
+
+        vertex.x = vx;
+        vertex.y = vy;
+        vertex.z = vz;
+
+        vertex.nx = nx;
+        vertex.ny = ny;
+        vertex.nz = nz;
+
+        // Read material
         if (materials.size() > 0)
         {
           auto material = materials[shapes[s].mesh.material_ids[f]];
@@ -151,44 +149,45 @@ void model::load_obj(const std::filesystem::path& model_path)
           vertex.emissive_g = material.emission[1];
           vertex.emissive_b = material.emission[2];
         }
+        else
+        {
+          // Do nothing
+        }
 
-        vertex_buffer->item(vertex_buffer_size++) = vertex;
-        per_shape_buffer[s]->item(per_shapes_id++) = vertex;
-
-        // tinyobj::real_t tx = attrib.texcoords[2 * idx.texcoord_index + 0];
-        // tinyobj::real_t ty = attrib.texcoords[2 * idx.texcoord_index + 1];
+        // printf("adding 1\n");
+        vertex_buffer->item(vertex_buffer_id++) = vertex;
+        // printf("adding 2\n");
+        per_shape_buffer[s]->item(per_shape_id++) = vertex;
+        // printf("adding 3\n");
 
         // Optional: vertex colors
         // tinyobj::real_t red = attrib.colors[3*idx.vertex_index+0];
         // tinyobj::real_t green = attrib.colors[3*idx.vertex_index+1];
         // tinyobj::real_t blue = attrib.colors[3*idx.vertex_index+2];
       }
+      index_offset += fv;
 
-      face_offset += num_face_vertices;
-      // // per-face material
-      // shapes[s].mesh.material_ids[f];
+      // per-face material
+      shapes[s].mesh.material_ids[f];
     }
   }
 }
 
-std::shared_ptr<cg::resource<cg::vertex>> model::get_vertex_buffer() const
+std::shared_ptr<cg::resource<cg::vertex>> cg::world::model::get_vertex_buffer() const
 {
   return vertex_buffer;
 }
 
 std::vector<std::shared_ptr<cg::resource<cg::vertex>>>
-  model::get_per_shape_buffer() const
+  cg::world::model::get_per_shape_buffer() const
 {
   return per_shape_buffer;
 }
 
 
-const float4x4 model::get_world_matrix() const
+const float4x4 cg::world::model::get_world_matrix() const
 {
   return float4x4(
-    { 1.0, 0.f, 0.f, 0.f },
-    { 0.0, 1.f, 0.f, 0.f },
-    { 0.0, 0.f, 1.f, 0.f },
-    { 0.0, 0.f, 0.f, 1.f }
-  );
+    { 1.f, 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f, 0.f }, { 0.f, 0.f, 1.f, 0.f },
+    { 0.f, 0.f, 0.f, 1.f });
 }

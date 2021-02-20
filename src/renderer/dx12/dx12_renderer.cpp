@@ -477,7 +477,7 @@ void cg::renderer::dx12_renderer::load_assets()
   constant_buffer->SetName(L"Constant buffer");
 
   THROW_IF_FAILED(
-    vertex_buffer->Map(
+    constant_buffer->Map(
       0,
       &read_range,
       reinterpret_cast<void**>(&constant_buffer_data_begin)
