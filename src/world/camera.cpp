@@ -71,30 +71,31 @@ const float4x4 camera::get_view_matrix() const
   float3 x_axis = normalize(cross(up, z_axis));
   float3 y_axis = cross(z_axis, x_axis);
 
-  // return float4x4{
-  // 	{ x_axis.x, x_axis.y, x_axis.z, 0 },
-  // 	{ y_axis.x, y_axis.y, y_axis.z, 0 },
-  // 	{ z_axis.x, z_axis.y, z_axis.z, 0 },
-  // 	{ -dot(x_axis, position), -dot(y_axis, position), -dot(z_axis, position), 1 }
-  // };
-  return float4x4{ { x_axis.x, x_axis.y, x_axis.z, 0 },
-                   { y_axis.x, y_axis.y, y_axis.z, 0 },
-                   { z_axis.x, z_axis.y, z_axis.z, 0 },
-                   { -dot(x_axis, position), -dot(y_axis, position),
-                     -dot(z_axis, position), 1 } };
+  return float4x4(
+    { x_axis.x, y_axis.x, z_axis.x, 0 },
+    { x_axis.y, y_axis.y, z_axis.y, 0 },
+    { x_axis.z, y_axis.z, z_axis.z, 0 },
+    { -dot(x_axis, position), -dot(y_axis, position), -dot(z_axis, position), 1 }
+  );
 }
 
 #ifdef DX12
 const DirectX::XMMATRIX camera::get_dxm_view_matrix() const
 {
-  THROW_ERROR("Not implemented yet");
-  return DirectX::XMMatrixIdentity();
+  // DirectX requires its own vector types; so here we go:
+  DirectX::FXMVECTOR eye_position{ position.x, position.y, position.z };
+  float3 direction = get_direction();
+  DirectX::FXMVECTOR eye_direction{ direction.x, direction.y, direction.z };
+  DirectX::FXMVECTOR up_direction{ 0.f, 1.f, 0.f };
+
+  return DirectX::XMMatrixLookToRH(eye_position, eye_direction, up_direction);
 }
 
 const DirectX::XMMATRIX camera::get_dxm_projection_matrix() const
 {
-  THROW_ERROR("Not implemented yet");
-  return DirectX::XMMatrixIdentity();
+  return DirectX::XMMatrixPerspectiveFovRH(
+    angle_of_view, aspect_ratio, z_near, z_far
+  );
 }
 #endif
 
@@ -128,4 +129,14 @@ const float3 camera::get_right() const
 const float3 camera::get_up() const
 {
   return cross(get_right(), get_direction());
+}
+
+float camera::get_phi()
+{
+  return phi * 180.0f / static_cast<float>(M_PI);
+}
+
+float camera::get_theta()
+{
+  return theta * 180.0f / static_cast<float>(M_PI);
 }
