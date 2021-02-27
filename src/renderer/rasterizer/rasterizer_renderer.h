@@ -8,11 +8,11 @@ namespace cg::renderer
 class rasterization_renderer : public renderer
 {
 public:
-  void init() override;
-  void destroy() override;
+  virtual void init();
+  virtual void destroy();
 
-  void update() override;
-  void render() override;
+  virtual void update();
+  virtual void render();
 
 protected:
   std::shared_ptr<resource<unsigned_color>> render_target;

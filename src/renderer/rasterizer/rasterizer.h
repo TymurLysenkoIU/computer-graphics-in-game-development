@@ -12,7 +12,13 @@ using namespace linalg::aliases;
 
 namespace cg::renderer
 {
-template<typename VB, typename RT>
+
+template<
+  // Type of an element of the vertex buffer
+  typename VB,
+  // Type of an element of a render target
+  typename RT
+>
 class rasterizer
 {
 public:
@@ -34,11 +40,10 @@ public:
 
   void set_viewport(size_t in_width, size_t in_height);
 
-  void draw(size_t num_vertexes, size_t vertex_offset);
+  void draw(size_t num_vertices, size_t vertex_offset);
 
-  std::function<std::pair<float4, VB>(float4 vertex, VB vertex_data)>
-  vertex_shader;
-  std::function<color(const VB& vertex_data, float z)> pixel_shader;
+  std::function<std::pair<float4, VB>(float4 vertex, VB vertex_data)> vertex_shader;
+  std::function<color(const VB& vertex_data, const float z)> pixel_shader;
 
 protected:
   std::shared_ptr<resource<VB>> vertex_buffer;
@@ -53,7 +58,7 @@ protected:
 };
 
 template<typename VB, typename RT>
-void rasterizer<VB, RT>::set_render_target(
+inline void rasterizer<VB, RT>::set_render_target(
   std::shared_ptr<resource<RT>> in_render_target,
   std::shared_ptr<resource<float>> in_depth_buffer
 )
@@ -66,7 +71,7 @@ void rasterizer<VB, RT>::set_render_target(
 }
 
 template<typename VB, typename RT>
-void rasterizer<VB, RT>::clear_render_target(
+inline void rasterizer<VB, RT>::clear_render_target(
   const RT& in_clear_value,
   const float in_depth
 )
@@ -78,36 +83,142 @@ void rasterizer<VB, RT>::clear_render_target(
       i = in_clear_value;
     }
   }
+
+  if (depth_buffer)
+  {
+    for (auto& i : *depth_buffer)
+    {
+      i = in_depth;
+    }
+  }
 }
 
 template<typename VB, typename RT>
-void rasterizer<VB, RT>::set_vertex_buffer(
+inline void rasterizer<VB, RT>::set_vertex_buffer(
   std::shared_ptr<resource<VB>> in_vertex_buffer)
 {
   vertex_buffer = in_vertex_buffer;
 }
 
 template<typename VB, typename RT>
-void rasterizer<VB, RT>::set_viewport(size_t in_width, size_t in_height)
+inline void rasterizer<VB, RT>::set_viewport(size_t in_width, size_t in_height)
 {
-  THROW_ERROR("Not implemented yet");
+  width = in_width;
+  height = in_height;
 }
 
 template<typename VB, typename RT>
-void rasterizer<VB, RT>::draw(size_t num_vertexes, size_t vertex_offset)
+inline void rasterizer<VB, RT>::draw(size_t num_vertices, size_t vertex_offset)
 {
-  THROW_ERROR("Not implemented yet");
+  size_t vertex_index = vertex_offset;
+  while (vertex_index < vertex_offset + num_vertices)
+  {
+    // Read a triangle
+    std::vector<VB> vertices(3);
+    vertices[0] = vertex_buffer->item(vertex_index++);
+    vertices[1] = vertex_buffer->item(vertex_index++);
+    vertices[2] = vertex_buffer->item(vertex_index++);
+
+    for (auto& vertex : vertices)
+    {
+      float4 coords{ vertex.x, vertex.y, vertex.z, 1.f };
+
+      // Call vertex shader
+      auto processed_vertex = vertex_shader(coords, vertex);
+      
+      vertex.x = processed_vertex.first.x / processed_vertex.first.w;
+      vertex.y = processed_vertex.first.y / processed_vertex.first.w;
+      vertex.z = processed_vertex.first.z / processed_vertex.first.w;
+
+      vertex.x = (vertex.x + 1.f) * width / 2.f;
+      vertex.y = (-vertex.y + 1.f) * height / 2.f;
+    }
+
+    float2 bounding_box_begin{
+      std::clamp(
+        std::min(std::min(vertices[0].x, vertices[1].x), vertices[2].x),
+        0.f,
+        static_cast<float>(width) - 1.f
+      ),
+      std::clamp(
+        std::min(std::min(vertices[0].y, vertices[1].y), vertices[2].y),
+        0.f,
+        static_cast<float>(height) - 1.f
+      ),
+    };
+    float2 bounding_box_end{
+      std::clamp(
+        std::max(std::max(vertices[0].x, vertices[1].x), vertices[2].x), 0.f,
+        static_cast<float>(width) - 1.f),
+      std::clamp(
+        std::max(std::max(vertices[0].y, vertices[1].y), vertices[2].y), 0.f,
+        static_cast<float>(height) - 1.f),
+    };
+
+    float edge = edge_function(
+      float2{ vertices[0].x, vertices[0].y },
+      float2{ vertices[1].x, vertices[1].y },
+      float2{ vertices[2].x, vertices[2].y }
+    );
+
+    // For each pixel in the bounding box
+    for (int x = static_cast<int>(bounding_box_begin.x); x <= static_cast<int>(bounding_box_end.x); x++)
+      for (int y = static_cast<int>(bounding_box_begin.y); x <= static_cast<int>(bounding_box_end.y); y++)
+      {
+        // Barycentric coordinate for vertices[2]
+        float edge0 = edge_function(
+          float2{ vertices[0].x, vertices[0].y },
+          float2{ vertices[1].x, vertices[1].y },
+          float2{ static_cast<float>(x), static_cast<float>(y) }
+        );
+        // Barycentric coordinate for vertices[0]
+        float edge1 = edge_function(
+          float2{ vertices[1].x, vertices[1].y },
+          float2{ vertices[2].x, vertices[2].y },
+          float2{ static_cast<float>(x), static_cast<float>(y) }
+        );
+        // Barycentric coordinate for vertices[1]
+        float edge2 = edge_function(
+          float2{ vertices[2].x, vertices[2].y },
+          float2{ vertices[0].x, vertices[0].y },
+          float2{ static_cast<float>(x), static_cast<float>(y) }
+        );
+
+        // If the pixel belongs to the triangle
+        if (edge0 >= 0.f && edge1 >= 0.f && edge2 >= 0.f)
+        {
+          float u = edge1 / edge;
+          float v = edge2 / edge;
+          float w = edge0 / edge;
+
+          float z = u * vertices[0].z + v * vertices[1].z + w * vertices[2].z;
+
+          if (!depth_test(z, x, y))
+            continue;
+
+          auto pixel_shader_result = pixel_shader(vertices[0], 0);
+
+          render_target->item(x, y) = RT::from_color(pixel_shader_result);
+
+          if (depth_buffer)
+            depth_buffer->item(x, y) = z;
+        }
+      }
+  }
 }
 
 template<typename VB, typename RT>
-float rasterizer<VB, RT>::edge_function(float2 a, float2 b, float2 c)
+inline float rasterizer<VB, RT>::edge_function(float2 a, float2 b, float2 c)
 {
-  THROW_ERROR("Not implemented yet");
+  return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x);
 }
 
 template<typename VB, typename RT>
-bool rasterizer<VB, RT>::depth_test(float z, size_t x, size_t y)
+inline bool rasterizer<VB, RT>::depth_test(float z, size_t x, size_t y)
 {
-  THROW_ERROR("Not implemented yet");
+  if (!depth_buffer)
+    return true;
+
+  return depth_buffer->item(x, y) > z;
 }
 } // namespace cg::renderer

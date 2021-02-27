@@ -188,6 +188,9 @@ std::vector<std::shared_ptr<cg::resource<cg::vertex>>>
 const float4x4 cg::world::model::get_world_matrix() const
 {
   return float4x4(
-    { 1.f, 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f, 0.f }, { 0.f, 0.f, 1.f, 0.f },
-    { 0.f, 0.f, 0.f, 1.f });
+    { 1.f, 0.f, 0.f, 0.f },
+    { 0.f, 1.f, 0.f, 0.f },
+    { 0.f, 0.f, 1.f, 0.f },
+    { 0.f, 0.f, 0.f, 1.f }
+  );
 }

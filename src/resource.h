@@ -123,9 +123,8 @@ struct color
 {
   static color from_float3(const float3& in)
   {
-    THROW_ERROR("Not implemented yet");
-    return color();
-  }
+    return color{ in.x, in.y, in.z };
+  };
 
   float r;
   float g;
@@ -136,14 +135,16 @@ struct unsigned_color
 {
   static unsigned_color from_color(const color& color)
   {
-    THROW_ERROR("Not implemented yet");
-    return unsigned_color();
+    return unsigned_color{
+      static_cast<unsigned char>(std::clamp(255.f * color.r, 0.f, 255.f)),
+      static_cast<unsigned char>(std::clamp(255.f * color.g, 0.f, 255.f)),
+      static_cast<unsigned char>(std::clamp(255.f * color.b, 0.f, 255.f)),
+    };
   }
 
   float3 to_float3()
   {
-    THROW_ERROR("Not implemented yet");
-    return float3();
+    return float3(r, g, b) / 255.f;
   }
 
   unsigned char r;
