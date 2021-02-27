@@ -163,7 +163,7 @@ inline void rasterizer<VB, RT>::draw(size_t num_vertices, size_t vertex_offset)
 
     // For each pixel in the bounding box
     for (int x = static_cast<int>(bounding_box_begin.x); x <= static_cast<int>(bounding_box_end.x); x++)
-      for (int y = static_cast<int>(bounding_box_begin.y); x <= static_cast<int>(bounding_box_end.y); y++)
+      for (int y = static_cast<int>(bounding_box_begin.y); y <= static_cast<int>(bounding_box_end.y); y++)
       {
         // Barycentric coordinate for vertices[2]
         float edge0 = edge_function(
