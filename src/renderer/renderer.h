@@ -36,6 +36,5 @@ protected:
 };
 
 
-extern std::shared_ptr<renderer> make_renderer(
-  std::shared_ptr<settings> settings);
+extern std::shared_ptr<renderer> make_renderer(std::shared_ptr<settings> settings);
 } // namespace cg::renderer

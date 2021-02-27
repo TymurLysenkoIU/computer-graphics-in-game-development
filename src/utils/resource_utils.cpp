@@ -21,7 +21,7 @@ void cg::utils::save_resource(
     width * sizeof(unsigned_color));
 
   if (result != 1)
-  THROW_ERROR("Can't save the resource");
+    THROW_ERROR("Can't save the resource");
 
   std::string view_command("start ");
   view_command.append(filepath.string());
